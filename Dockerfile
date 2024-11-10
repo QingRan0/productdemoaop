@@ -9,7 +9,7 @@ ENV PATH $JDK_HOME/bin:$PATH
 # 安装JDK17
 RUN apt-get update
 RUN apt-get install -y wget
-RUN wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz
+RUN wget https://download.oracle.com/java/17/archive/jdk-17_linux-x64_bin.tar.gz
 RUN tar -xzf jdk-17_linux-x64_bin.tar.gz -C /opt
 RUN rm -f jdk-17_linux-x64_bin.tar.gz
 RUN mv /opt/jdk-17.0.9 /opt/jdk
