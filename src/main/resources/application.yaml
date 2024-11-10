@@ -16,8 +16,8 @@ spring:
     #url: jdbc:mysql://mysql:3306/oomall_demo?serverTimezone=Asia/Shanghai
     url: jdbc:mysql://192.168.14.224:3306/oomall_demo?serverTimezone=Asia/Shanghai
     #数据库服务器用户名和密码
-    username: administrator
-    password: 5bf55132
+    username: root
+    password: wxhyyds_0727
     #数据库连接池
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
