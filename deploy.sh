@@ -34,9 +34,12 @@ sshpass -p 'wxhyyds_0727' ssh -T root@192.168.1.146 << EOF
   docker pull $DOCKER_IMAGE
 EOF
 
-# 7. 更新 Docker Swarm 服务
-echo "正在更新 Docker Swarm 服务..."
-docker service update --image $DOCKER_IMAGE productdemoaop || { echo "更新 Docker 服务失败！"; exit 1; }
+# 7. 删除旧的 Docker Swarm 服务并重新创建
+echo "正在删除旧的 Docker Swarm 服务 'productdemoaop'..."
+docker service rm productdemoaop || { echo "删除 Docker 服务失败！可能服务不存在。"; }
+
+echo "正在创建新的 Docker Swarm 服务 'productdemoaop'..."
+docker service create --name productdemoaop --network my-net --constraint node.labels.server==goods --publish published=8080,target=8080 --mount type=bind,source=/root/logs,destination=/app/logs -d $DOCKER_IMAGE || { echo "创建 Docker 服务失败！"; exit 1; }
 
 # 8. 完成
 echo "部署完成！新的镜像已成功推送并更新到服务：$DOCKER_IMAGE"
