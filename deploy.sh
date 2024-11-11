@@ -5,7 +5,7 @@ DOCKER_IMAGE="swr.cn-north-4.myhuaweicloud.com/oomall-yyds/productdemoaop:0.0.1"
 LOCAL_IMAGE="xmu-javaee/productdemoaop:0.0.1-SNAPSHOT"
 
 # 删除 Docker 镜像
-echo "正在删除 Docker 镜像 '$LOCAL_IMAGE' 和 '$DOCKER_IMAGE' ..."
+echo "正在删除 '$LOCAL_IMAGE' 和 '$DOCKER_IMAGE' 镜像..."
 docker rmi $LOCAL_IMAGE $DOCKER_IMAGE || { echo "删除 Docker 镜像失败，可能镜像不存在或已经被删除。"; }
 
 # 1. 更新 Git 代码
@@ -13,7 +13,7 @@ echo "正在拉取最新代码..."
 git pull || { echo "Git 拉取失败！"; exit 1; }
 
 # 2. 编译代码、构建镜像
-echo "正在构建 Maven 项目，跳过测试..."
+echo "正在使用 Maven 编译代码、构建镜像..."
 mvn pre-integration-test -Dmaven.test.skip=true || { echo "Maven 构建失败！"; exit 1; }
 
 # 3. Docker 镜像服务登录
@@ -25,11 +25,11 @@ echo "正在为 Docker 镜像打标签，版本为 0.0.1 ..."
 docker tag $LOCAL_IMAGE $DOCKER_IMAGE || { echo "Docker 打标签失败！"; exit 1; }
 
 # 5. 推送到镜像仓库
-echo "正在推送 Docker 镜像到仓库..."
+echo "正在推送 Docker 镜像到华为云镜像仓库..."
 docker push $DOCKER_IMAGE || { echo "Docker 推送失败！"; exit 1; }
 
 # 6. SSH 登录到另一台机器，拉取最新的 Docker 镜像
-echo "正在通过 SSH 登录到远程服务器并拉取最新镜像..."
+echo "正在通过 SSH 登录到 OOMALL-node1 并拉取最新镜像..."
 sshpass -p 'wxhyyds_0727' ssh -T root@192.168.1.146 << EOF
   docker pull $DOCKER_IMAGE
 EOF
@@ -40,3 +40,7 @@ docker service update --image $DOCKER_IMAGE productdemoaop || { echo "更新 Doc
 
 # 8. 完成
 echo "部署完成！新的镜像已成功推送并更新到服务：$DOCKER_IMAGE"
+
+# 9. 检查服务状态
+echo "正在检查服务状态..."
+docker service ps productdemoaop
