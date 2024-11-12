@@ -89,38 +89,4 @@ public interface ProductAllMapper {
             @Result(column="gmt_modified", property="gmtModified", jdbcType=JdbcType.TIMESTAMP)
     })
     ProductPo selectOtherProduct(Long goodsId);
-
-    @Select({
-            "SELECT p.*, os.*, gp.*",
-            "FROM product p",
-            "LEFT JOIN onsale os ON p.id = os.product_id",
-            "LEFT JOIN goods_product gp ON p.goods_id = gp.goods_id",
-            "WHERE p.name = #{name}"
-    })
-    @Results({
-            @Result(column="id", property="id", jdbcType=JdbcType.BIGINT, id=true),
-            @Result(column="sku_sn", property="skuSn", jdbcType=JdbcType.VARCHAR),
-            @Result(column="name", property="name", jdbcType=JdbcType.VARCHAR),
-            @Result(column="original_price", property="originalPrice", jdbcType=JdbcType.BIGINT),
-            @Result(column="weight", property="weight", jdbcType=JdbcType.BIGINT),
-            @Result(column="barcode", property="barcode", jdbcType=JdbcType.VARCHAR),
-            @Result(column="unit", property="unit", jdbcType=JdbcType.VARCHAR),
-            @Result(column="origin_place", property="originPlace", jdbcType=JdbcType.VARCHAR),
-            @Result(column="commission_ratio", property="commissionRatio", jdbcType=JdbcType.INTEGER),
-            @Result(column="free_threshold", property="freeThreshold", jdbcType=JdbcType.BIGINT),
-            @Result(column="status", property="status", jdbcType=JdbcType.SMALLINT),
-            @Result(column="creator_id", property="creatorId", jdbcType=JdbcType.BIGINT),
-            @Result(column="creator_name", property="creatorName", jdbcType=JdbcType.VARCHAR),
-            @Result(column="modifier_id", property="modifierId", jdbcType=JdbcType.BIGINT),
-            @Result(column="modifier_name", property="modifierName", jdbcType=JdbcType.VARCHAR),
-            @Result(column="gmt_create", property="gmtCreate", jdbcType=JdbcType.TIMESTAMP),
-            @Result(column="gmt_modified", property="gmtModified", jdbcType=JdbcType.TIMESTAMP),
-
-            // 关联的 onSaleList
-            @Result(property = "onSaleList", javaType = List.class, many = @Many(select = "selectLastOnSaleByProductId"), column = "id"),
-
-            // 关联的其他产品
-            @Result(property = "otherProduct", javaType = List.class, many = @Many(select = "selectOtherProduct"), column = "goods_id")
-    })
-    List<ProductAllPo> getProductsWithJoinByName(@Param("name") String name);
 }

@@ -12,7 +12,9 @@ import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductAllMapper;
+import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductJoinMapper;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductAllPo;
+import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductJoinPo;
 import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -39,11 +42,14 @@ public class ProductDao {
 
     private ProductAllMapper productAllMapper;
 
+    private ProductJoinMapper productJoinPoMapper;
+
     @Autowired
-    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper) {
+    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, ProductJoinMapper productJoinPoMapper) {
         this.productPoMapper = productPoMapper;
         this.onSaleDao = onSaleDao;
         this.productAllMapper = productAllMapper;
+        this.productJoinPoMapper = productJoinPoMapper;
     }
 
     /**
@@ -170,21 +176,58 @@ public class ProductDao {
     }
 
     public List<Product> findProductByName_join(String name) throws BusinessException {
-        // 调用mapper中的getProductsWithJoinByName方法，使用JOIN查询获取产品和关联数据
-        List<ProductAllPo> productAllPoList = productAllMapper.getProductsWithJoinByName(name);
+        // 定义存储结果的列表
+        List<Product> productList;
 
-        if (productAllPoList == null || productAllPoList.isEmpty()) {
-            throw new BusinessException(ReturnNo.RESOURCE_ID_NOTEXIST, "没有找到对应名称的产品");
+        // 调用 productJoinPoMapper 执行查询
+        List<ProductJoinPo> productJoinPoList = productJoinPoMapper.getProductPartsByName(name);
+
+        // 如果查询结果为空，抛出 BusinessException 异常
+        if (productJoinPoList.isEmpty()) {
+            throw new BusinessException(ReturnNo.RESOURCE_ID_NOTEXIST, "产品不存在");
         }
 
-        // 将查询到的数据列表转换为业务对象列表
-        List<Product> productList = productAllPoList.stream()
-                .map(po -> CloneFactory.copy(new Product(), po))
-                .collect(Collectors.toList());
+        // 处理查询结果，构造 productAllPo 对象
+        ProductJoinPo joinPo = productJoinPoList.get(0);  // 获取第一个结果
+        ProductAllPo productAllPo = ProductAllPo.builder()
+                .id(joinPo.getId())
+                .skuSn(joinPo.getSkuSn())
+                .name(joinPo.getName())
+                .originalPrice(joinPo.getOriginalPrice())
+                .weight(joinPo.getWeight())
+                .barcode(joinPo.getBarcode())
+                .unit(joinPo.getUnit())
+                .originPlace(joinPo.getOriginPlace())
+                .creatorId(joinPo.getCreatorId())
+                .creatorName(joinPo.getCreatorName())
+                .modifierId(joinPo.getModifierId())
+                .modifierName(joinPo.getModifierName())
+                .gmtCreate(joinPo.getGmtCreate())
+                .gmtModified(joinPo.getGmtModified())
+                .commissionRatio(joinPo.getCommissionRatio())
+                .freeThreshold(joinPo.getFreeThreshold())
+                .status(joinPo.getStatus())
+                .otherProduct(new ArrayList<>())  // 初始化 empty list
+                .onSaleList(new ArrayList<>())   // 初始化 empty list
+                .build();
 
-        logger.debug("findProductByName_join: productList = {}", productList);
+        // 遍历查询结果，填充 ProductAllPo 中的 otherProduct 和 onSaleList
+        for (ProductJoinPo po : productJoinPoList) {
+            productAllPo.getOtherProduct().add(po.getOtherProduct());
+            productAllPo.getOnSaleList().add(po.getOnSaleList());
+        }
+
+        // 将处理后的 productAllPo 添加到结果列表中
+        List<ProductAllPo> productPoList = new ArrayList<>();
+        productPoList.add(productAllPo);
+
+        // 将 productAllPo 转换为 Product 对象
+        productList =  productPoList.stream().map(o->CloneFactory.copy(new Product(), o)).collect(Collectors.toList());
+        logger.debug("findProductByName_manual: productList = {}", productList);
         return productList;
     }
+
+
 
 
     /**
