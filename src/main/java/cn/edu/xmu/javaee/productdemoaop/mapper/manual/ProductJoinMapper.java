@@ -11,7 +11,7 @@ public interface ProductJoinMapper {
 
     @SelectProvider(type = ProductJoinPoSqlProvider.class, method = "getProductByNameWithJoin")
     @Results({
-            @Result(column = "id", property = "id", jdbcType = JdbcType.BIGINT, id = true),
+            @Result(column = "product_id", property = "id", jdbcType = JdbcType.BIGINT, id = true),
             @Result(column = "sku_sn", property = "skuSn", jdbcType = JdbcType.VARCHAR),
             @Result(column = "name", property = "name", jdbcType = JdbcType.VARCHAR),
             @Result(column = "original_price", property = "originalPrice", jdbcType = JdbcType.BIGINT),
@@ -46,7 +46,6 @@ public interface ProductJoinMapper {
 
             // Mapping otherProduct to ProductPo
             @Result(column = "otherProduct_id", property = "otherProduct.id", jdbcType = JdbcType.BIGINT),
-            @Result(column = "otherProduct_goods_id", property = "otherProduct.goodsId", jdbcType = JdbcType.BIGINT),
             @Result(column = "otherProduct_sku_sn", property = "otherProduct.skuSn", jdbcType = JdbcType.VARCHAR),
             @Result(column = "otherProduct_name", property = "otherProduct.name", jdbcType = JdbcType.VARCHAR),
             @Result(column = "otherProduct_original_price", property = "otherProduct.originalPrice", jdbcType = JdbcType.BIGINT),

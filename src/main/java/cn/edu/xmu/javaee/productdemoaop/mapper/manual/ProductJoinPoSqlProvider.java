@@ -5,7 +5,7 @@ import org.apache.ibatis.jdbc.SQL;
 public class ProductJoinPoSqlProvider {
     public String getProductByNameWithJoin(String name) {
         return new SQL() {{
-            SELECT("p.id");
+            SELECT("p.id AS product_id");
             SELECT("p.sku_sn");
             SELECT("p.name");
             SELECT("p.original_price");
