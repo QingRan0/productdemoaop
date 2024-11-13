@@ -225,7 +225,7 @@ public class ProductDao {
 
         // 将 productAllPo 转换为 Product 对象
         productList =  productPoList.stream().map(o->CloneFactory.copy(new Product(), o)).collect(Collectors.toList());
-        logger.debug("findProductByName_manual: productList = {}", productList);
+        logger.debug("findProductByName_join: productList = {}", productList);
         return productList;
     }
 
