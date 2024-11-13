@@ -3,18 +3,18 @@ package cn.edu.xmu.javaee.productdemoaop.dao;
 
 import cn.edu.xmu.javaee.core.exception.BusinessException;
 import cn.edu.xmu.javaee.core.model.ReturnNo;
-import cn.edu.xmu.javaee.productdemoaop.dao.OnSaleDao;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.OnSale;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.Product;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.ProductPoMapper;
-import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductAllMapper;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductJoinMapper;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductAllPo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductJoinPo;
+import cn.edu.xmu.javaee.productdemoaop.repository.ProductRepository;
+import cn.edu.xmu.javaee.productdemoaop.repository.model.ProductModel;
 import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -44,12 +43,15 @@ public class ProductDao {
 
     private ProductJoinMapper productJoinPoMapper;
 
+    private ProductRepository productRepository;
+
     @Autowired
-    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, ProductJoinMapper productJoinPoMapper) {
+    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, ProductJoinMapper productJoinPoMapper, ProductRepository productRepository) {
         this.productPoMapper = productPoMapper;
         this.onSaleDao = onSaleDao;
         this.productAllMapper = productAllMapper;
         this.productJoinPoMapper = productJoinPoMapper;
+        this.productRepository = productRepository;
     }
 
     /**
@@ -227,9 +229,6 @@ public class ProductDao {
         return productList;
     }
 
-
-
-
     /**
      * 用GoodsPo对象找Goods对象
      * @param  productId
@@ -248,5 +247,48 @@ public class ProductDao {
         product = CloneFactory.copy(new Product(), productPoList.get(0));
         logger.debug("findProductByID_manual: product = {}", product);
         return product;
+    }
+
+    public List<Product> findProductByName_jpa(String name) {
+        logger.debug("retrieveProductByName_jpa: name = {}", name);
+
+        // 根据商品名称查询所有商品
+        List<ProductModel> productModels = productRepository.findByNameContaining(name);
+        List<Product> products = new ArrayList<>();
+
+        // 遍历每个 ProductModel，以此创建 Product 实例
+        for (ProductModel productModel : productModels) {
+            Product product = this.retrieveFullProduct(productModel);
+            products.add(product);
+        }
+
+        return products;
+    }
+
+    private Product retrieveFullProduct(ProductModel productModel) {
+        Product product = CloneFactory.copy(new Product(), productModel);
+
+        // 查询 OnSale => Product.onSaleList
+        List<OnSale> onSales = onSaleDao.getLastOnSaleByProductId(productModel.getId());
+        product.setOnSaleList(onSales);
+
+        // 查询 OtherProduct => Product.otherProduct
+        List<Product> otherProducts = this.retrieveOtherProduct(productModel);
+        product.setOtherProduct(otherProducts);
+
+        return product;
+    }
+
+    private List<Product> retrieveOtherProduct(ProductModel productModel) {
+        List<ProductModel> otherProductModels = productRepository.findByGoodsId(productModel.getGoodsId());
+        List<Product> otherProducts = new ArrayList<>();
+        for (ProductModel otherProductModel : otherProductModels) {
+            if (otherProductModel.getId().equals(productModel.getId())) {
+                continue;
+            }
+            Product otherProduct = CloneFactory.copy(new Product(), otherProductModel);
+            otherProducts.add(otherProduct);
+        }
+        return otherProducts;
     }
 }

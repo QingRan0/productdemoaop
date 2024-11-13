@@ -5,6 +5,8 @@ import cn.edu.xmu.javaee.productdemoaop.dao.bo.OnSale;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.OnSalePoMapper;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePoExample;
+import cn.edu.xmu.javaee.productdemoaop.repository.OnSaleRepository;
+import cn.edu.xmu.javaee.productdemoaop.repository.model.OnSaleModel;
 import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,9 +26,12 @@ public class OnSaleDao {
 
     private OnSalePoMapper onSalePoMapper;
 
+    private OnSaleRepository onSaleRepository;
+
     @Autowired
-    public OnSaleDao(OnSalePoMapper onSalePoMapper) {
+    public OnSaleDao(OnSalePoMapper onSalePoMapper, OnSaleRepository onSaleRepository) {
         this.onSalePoMapper = onSalePoMapper;
+        this.onSaleRepository = onSaleRepository;
     }
 
     /**
@@ -43,5 +49,15 @@ public class OnSaleDao {
         criteria.andEndTimeGreaterThanOrEqualTo(now);
         List<OnSalePo> onsalePoList = onSalePoMapper.selectByExample(example);
         return onsalePoList.stream().map(po-> CloneFactory.copy(new OnSale(), po)).collect(Collectors.toList());
+    }
+
+    public List<OnSale> getLastOnSaleByProductId(Long productId) {
+        List<OnSaleModel> onSaleModels = onSaleRepository.selectLastOnSaleByProductId(productId);
+        List<OnSale> onSales = new ArrayList<>();
+        for (OnSaleModel onSaleModel : onSaleModels) {
+            OnSale onSale = CloneFactory.copy(new OnSale(), onSaleModel);
+            onSales.add(onSale);
+        }
+        return onSales;
     }
 }

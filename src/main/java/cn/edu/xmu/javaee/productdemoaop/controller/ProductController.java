@@ -61,6 +61,8 @@ public class ProductController {
             productList = productService.findProductByName_manual(name);
         } else if ("join".equals(type)) {
             productList = productService.retrieveProductByName_join(name);
+        } else if ("jpa".equals(type)) {
+            productList = productService.retrieveProductByName_jpa(name);
         } else {
             productList = productService.retrieveProductByName(name, true);
         }

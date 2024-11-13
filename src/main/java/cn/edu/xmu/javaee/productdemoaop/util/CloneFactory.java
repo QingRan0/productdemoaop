@@ -10,6 +10,8 @@ import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductAllPo;
+import cn.edu.xmu.javaee.productdemoaop.repository.model.OnSaleModel;
+import cn.edu.xmu.javaee.productdemoaop.repository.model.ProductModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +101,43 @@ public class CloneFactory {
 
     public static Product copy(Product target, ProductVo source){
         target=Product.builder().name(source.getName()).barcode(source.getBarcode()).unit(source.getUnit()).originalPrice(source.getOriginalPrice()).originPlace(source.getOriginPlace()).weight(source.getWeight()).build();
+        return target;
+    }
+
+    public static Product copy(Product target, ProductModel source) {
+        target = Product.builder()
+                .id(source.getId())
+                .name(source.getName())
+                .skuSn(source.getSkuSn())
+                .originalPrice(source.getOriginalPrice())
+                .weight(source.getWeight())
+                .barcode(source.getBarcode())
+                .unit(source.getUnit())
+                .originPlace(source.getOriginPlace())
+                .commissionRatio(source.getCommissionRatio())
+                .freeThreshold(source.getFreeThreshold())
+                .creator(User.builder().id(source.getCreatorId()).name(source.getCreatorName()).build()) // creator
+                .modifier(User.builder().id(source.getModifierId()).name(source.getModifierName()).build()) // modifier
+                .gmtCreate(source.getGmtCreate())
+                .gmtModified(source.getGmtModified())
+                .build();
+
+        return target;
+    }
+
+    public static OnSale copy(OnSale target, OnSaleModel source) {
+        target = OnSale.builder()
+                .id(source.getId())
+                .beginTime(source.getBeginTime())
+                .endTime(source.getEndTime())
+                .price(source.getPrice())
+                .quantity(source.getQuantity())
+                .maxQuantity(source.getMaxQuantity())
+                .creator(User.builder().id(source.getCreatorId()).name(source.getCreatorName()).build())  // creator
+                .modifier(User.builder().id(source.getModifierId()).name(source.getModifierName()).build())  // modifier
+                .gmtCreate(source.getGmtCreate())
+                .gmtModified(source.getGmtModified())
+                .build();
         return target;
     }
 }

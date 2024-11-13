@@ -107,4 +107,17 @@ public class ProductService {
         return productDao.findProductByName_manual(name);
     }
 
+    /**
+     * 用商品名称搜索商品
+     *
+     * @param name 商品名称
+     * @return 商品对象
+     */
+    @Transactional
+    public List<Product> retrieveProductByName_jpa(String name) {
+        logger.debug("retrieveProductByName_jpa: name = {}", name);
+
+        return productDao.findProductByName_jpa(name);
+    }
+
 }
