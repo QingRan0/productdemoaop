@@ -16,6 +16,7 @@ import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductJoinPo;
 import cn.edu.xmu.javaee.productdemoaop.repository.ProductRepository;
 import cn.edu.xmu.javaee.productdemoaop.repository.model.ProductModel;
 import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
+import cn.edu.xmu.javaee.productdemoaop.util.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +46,16 @@ public class ProductDao {
 
     private ProductRepository productRepository;
 
+    private RedisUtil redisUtil;
+
     @Autowired
-    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, ProductJoinMapper productJoinPoMapper, ProductRepository productRepository) {
+    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, ProductJoinMapper productJoinPoMapper, ProductRepository productRepository, RedisUtil redisUtil) {
         this.productPoMapper = productPoMapper;
         this.onSaleDao = onSaleDao;
         this.productAllMapper = productAllMapper;
         this.productJoinPoMapper = productJoinPoMapper;
         this.productRepository = productRepository;
+        this.redisUtil = redisUtil;
     }
 
     /**
@@ -96,6 +100,57 @@ public class ProductDao {
         }
 
         logger.debug("retrieveProductByID: product = {}",  product);
+        return product;
+    }
+
+    /**
+     * 用GoodsPo对象找Goods对象
+     * @param  productId
+     * @return  Goods对象列表，带关联的Product返回
+     */
+    public Product retrieveProductByID(Long productId, boolean all, Boolean useredis) throws BusinessException {
+        // 定义缓存 key
+        String cacheKey = "product:" + productId;
+
+        // 如果需要使用 Redis 缓存
+        if (useredis) {
+            Product cachedProduct = (Product) redisUtil.get(cacheKey);
+            if (cachedProduct != null) {
+                logger.debug("retrieveProductByID: Cache hit for productId = {}", productId);
+                return cachedProduct;  // 从缓存中直接返回
+            } else {
+                logger.debug("retrieveProductByID: Cache miss for productId = {}", productId);
+            }
+        }
+
+        // 从数据库获取数据
+        ProductPo productPo = productPoMapper.selectByPrimaryKey(productId);
+        if (productPo == null) {
+            throw new BusinessException(ReturnNo.RESOURCE_ID_NOTEXIST, "产品id不存在");
+        }
+
+        Product product;
+        if (all) {
+            // 获取完整的 Product 对象
+            product = this.retrieveFullProduct(productPo);
+        } else {
+            // 如果不需要完整信息，则只需要从 ProductPo 克隆
+            product = CloneFactory.copy(new Product(), productPo);
+        }
+
+        logger.debug("retrieveProductByID: Retrieved product from database = {}", product);
+
+        // 如果需要使用 Redis 缓存，将查询结果缓存
+        if (useredis) {
+            try {
+                // 将 Product 存入缓存
+                redisUtil.set(cacheKey, product, 300);  // 设置缓存过期时间为 5 分钟
+                logger.debug("retrieveProductByID: Cache set for productId = {}", productId);
+            } catch (Exception e) {
+                logger.error("retrieveProductByID: Error while setting cache for productId = {}", productId, e);
+            }
+        }
+
         return product;
     }
 
@@ -246,6 +301,51 @@ public class ProductDao {
         }
         product = CloneFactory.copy(new Product(), productPoList.get(0));
         logger.debug("findProductByID_manual: product = {}", product);
+        return product;
+    }
+
+    public Product findProductByID_manual(Long productId, Boolean useredis) throws BusinessException {
+        // 使用 Redis 缓存的 key
+        String cacheKey = "product:" + productId;
+
+        // 如果需要使用 Redis 缓存
+        if (useredis) {
+            // 从缓存中获取数据
+            Product cachedProduct = (Product) redisUtil.get(cacheKey);
+            if (cachedProduct != null) {
+                logger.debug("findProductByID_manual: Cache hit for productId = {}", productId);
+                return cachedProduct;
+            } else {
+                logger.debug("findProductByID_manual: Cache miss for productId = {}", productId);
+            }
+        }
+
+        // 查询数据库
+        Product product = null;
+        ProductPoExample example = new ProductPoExample();
+        ProductPoExample.Criteria criteria = example.createCriteria();
+        criteria.andIdEqualTo(productId);
+        List<ProductAllPo> productPoList = productAllMapper.getProductWithAll(example);
+
+        // 如果产品不存在，抛出异常
+        if (productPoList.size() == 0) {
+            throw new BusinessException(ReturnNo.RESOURCE_ID_NOTEXIST, "产品id不存在");
+        }
+
+        // 将查询结果转换为 Product
+        product = CloneFactory.copy(new Product(), productPoList.get(0));
+        logger.debug("findProductByID_manual: product = {}", product);
+
+        // 如果使用 Redis 缓存，则将查询结果存入缓存
+        if (useredis) {
+            try {
+                redisUtil.set(cacheKey, product, 300);  // 例如设置缓存 5 分钟
+                logger.debug("findProductByID_manual: Cache set for productId = {}", productId);
+            } catch (Exception e) {
+                logger.error("findProductByID_manual: Error while setting cache for productId = {}", productId, e);
+            }
+        }
+
         return product;
     }
 

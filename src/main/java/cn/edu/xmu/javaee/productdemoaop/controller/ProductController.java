@@ -37,14 +37,14 @@ public class ProductController {
     }
 
     @GetMapping("{id}")
-    public ReturnObject getProductById(@PathVariable("id") Long id, @RequestParam(required = false, defaultValue = "auto") String type) {
+    public ReturnObject getProductById(@PathVariable("id") Long id, @RequestParam(required = false, defaultValue = "auto") String type, @RequestParam(required = false, defaultValue = "false") Boolean useredis) {
         logger.debug("getProductById: id = {} " ,id);
         ReturnObject retObj = null;
         Product product = null;
-        if (null != type && "manual" == type){
-            product = productService.findProductById_manual(id);
+        if ("manual".equals(type)){
+            product = productService.findProductById_manual(id, useredis);
         } else {
-            product = productService.retrieveProductByID(id, true);
+            product = productService.retrieveProductByID(id, true, useredis);
         }
         ProductDto productDto = CloneFactory.copy(new ProductDto(), product);
         retObj = new ReturnObject(productDto);

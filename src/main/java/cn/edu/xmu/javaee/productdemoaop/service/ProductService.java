@@ -37,6 +37,12 @@ public class ProductService {
         return productDao.retrieveProductByID(id, all);
     }
 
+    @Transactional(rollbackFor = {BusinessException.class})
+    public Product retrieveProductByID(Long id, boolean all, Boolean useredis) throws BusinessException {
+        logger.debug("findProductById: id = {}, all = {}", id, all);
+        return productDao.retrieveProductByID(id, all, useredis);
+    }
+
     /**
      * 用商品名称搜索商品
      *
@@ -91,9 +97,9 @@ public class ProductService {
     }
 
     @Transactional
-    public Product findProductById_manual(Long id) throws BusinessException {
+    public Product findProductById_manual(Long id, Boolean useredis) throws BusinessException {
         logger.debug("findProductById_manual: id = {}", id);
-        return productDao.findProductByID_manual(id);
+        return productDao.findProductByID_manual(id, useredis);
     }
 
     /**
